@@ -1,0 +1,68 @@
+索引操作
+    1 创建索引
+    对比关系型数据库，创建索引就等同于创建数据库
+    在Postman中，向ES服务器发PUT请求：http://127.0.0.1:9200/shopping
+    2 查询索引
+    GET请求 http://127.0.0.1:9200/shopping 查特定索引
+            http://127.0.0.1:9200/_cat/indices?v  所有索引
+    3 删除索引
+    DELETE请求
+
+
+文档操作
+    1 创建文档
+    POST请求 http://127.0.0.1:9200/shopping/_doc/1001
+    PUT请求 http://127.0.0.1:9200/shopping/_doc/1001      1001为自定义的主键
+    请求体内容为:
+    {
+        "tittle":"小米手机",
+        "category":"小米",
+        "images":"http://www.gulixueyuan.com/xm.jpg",
+        "price":"3999.00"
+    }
+
+    2 获取文档
+    GET请求 http://127.0.0.1:9200/shopping/_doc/1001
+    GET请求 http://127.0.0.1:9200/shopping/_search   查询索引下所有
+
+    条件查询
+    GET http://127.0.0.1:9200/shopping/_search
+    请求体:
+
+    {
+        "query":{
+            "match":{
+                "category":"小米"
+            }
+        }
+    }
+
+    p13 02 24
+
+
+    3 修改文档
+    全量更新
+    PUT请求 http://127.0.0.1:9200/shopping/_doc/1001
+    请求体内容为:
+    {
+        "tittle":"小米手机",
+        "category":"小米",
+        "images":"http://www.gulixueyuan.com/xm.jpg",
+        "price":"4999.00"
+    }
+
+    部分更新 不是幂等性的，只能采用POST方式
+    PUT请求 http://127.0.0.1:9200/shopping/_update/1001
+    请求体内容为:
+    {
+        "doc":{
+            "tittle":"华为手机"
+        }
+
+    }
+
+    4 删除文档
+    DELETE请求 http://127.0.0.1:9200/shopping/_doc/1001
+
+
+

@@ -1,0 +1,32 @@
+访问 http://localhost:8080/cal1/app/test  时
+
+1.访问的是localhost主机下的8080端口，即tomcat
+2.tomcat下部署了一些应用，这里访问的是cal1 这一应用程序
+3.tomcat 找到servlet 这里是 app
+4.servlet 根据你请求剩余的部分找到对应Controller对应的方法
+    在spring容器里面找controller类型的bean
+    遍历每一个方法，获取注解上的路径，找到匹配的那个
+DispatcherServlet中有一个属性指向了spring容器（WebApplicationContext）
+
+
+
+1.tomcat启动
+2.解析web.xml
+3.DispatchServlet实例化
+4.DispatcherServlet对象.init() 创建出了Spring容器
+    方法定义在DispatcherServlet的父类FrameworkServlet的父类HttpServletBean里
+5.接受请求
+
+
+springMVC的父子容器
+如果web.xml中配置了多个DispatcherServlet,这些Servlet都有各自的Spring容器，容器中的bean可能会有重复，所以
+需要有一个DispatcherServlet外部的Spring容器（父容器）
+
+如果在web.xml中配置了 listener，则表示有父容器 并存在了servletContext里面，子容器创建时rootContext就不为空，会将
+其绑定为父容器
+0配置  见MyWebApplicationInitializer
+
+
+springBoot启动过程
+1.先创建Spring容器
+2，启动tomcat

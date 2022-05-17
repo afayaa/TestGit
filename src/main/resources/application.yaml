@@ -1,0 +1,56 @@
+person:
+  userName: 'afa \n afayaa'
+#  单引号会将\n 作为字符串输出  双引号会将 \n 作为换行输出
+  boss: true
+  birth: 1996/10/20 20:05:05
+  age: 26
+  pet:
+    name: maomao
+    weight: 5
+#  interests: [篮球,足球]
+  interests:
+    - 篮球
+    - 足球
+    - 排球
+  animal:
+    - 猫
+    - 狗
+  score: {english: 80,math: 90}
+#  score:
+#    english: 80
+#    math: 90
+  salaries:
+    - 6000
+    - 7000
+  allPet:
+    sick:
+      - name: maomao
+        weight: 5
+      - {name: maomao2,weight: 4}
+    health:
+      - name: gougou
+        weight: 20
+spring:
+  main:
+    allow-circular-references: true
+  mvc:
+    hiddenmethod:
+      filter:
+        enabled: true
+      static-path-pattern: /res/**
+#    使用res前缀表示访问的是静态资源  当前项目 + static-path-pattern + 静态资源名 = 静态资源文件夹下找
+
+  web:
+    resources:
+      static-locations:
+        - classpath:/res/
+        - classpath:/public/
+#     重定义静态资源目录
+      add-mappings: true
+#      false 静态资源被禁用
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/test?useUnicode=true&characterEncoding=utf-8
+    username: root
+    password: root
+afa:
+  words: ntmd

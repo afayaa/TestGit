@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>首页</title>
+</head>
+<body>
+<!--如果你在yaml配置了静态资源访问路径前缀，欢迎页功能会失效，使用controller来处理-->
+    <h1>afa</h1>
+    <form action="/user" method="post">
+        <input name="_m" type="hidden" value="DELETE">
+        <input type="submit" value="DELETE">
+    </form>
+    <form action="/user" method="post">
+        <input name="_method" type="hidden" value="PUT">
+        <input type="submit" value="PUT">
+
+    </form>
+    <form action="/user" method="post">
+        <input type="submit" value="POST">
+    </form>
+
+    <form action="/user" method="get">
+        <input type="submit" value="GET">
+    </form>
+
+    <hr/>
+    测试基本注解：
+<ul>
+    <a href="/car/2/owner/李四?age=18&inters=football&inters=game">/car/{id}/owner/{userName}</a>
+    <li>@PathVariable(路径变量)</li>
+    <li>@MatrixVariable(矩阵变量)</li>
+
+</ul>
+
+<a href="/cars/sell;low=34;brand=byd,audi,yd;jsessionid=asdfa2223r3r">@MatrixVariable矩阵变量</a>
+<a href="/cars/sell;low=34;brand=byd;brand=audi;brand=yd">@MatrixVariable矩阵变量</a>
+<a href="/boss/1;age=20/2;age=10">@MatrixVariable矩阵变量 /boss/{bossId}/{empId}</a>
+
+
+/car/{path}?xxx=xxx&aaa=ccc  queryString  查询字符串 @RequestParam <br/>
+/car/{path;low=34;brand=audi,byd,yd}  矩阵变量 <br/>
+
+页面开发，cookie被禁用了，session里面的内容怎么使用；
+session.set(a,b)----> jsessionid-----> cookie -----> 每次发请求携带
+url 重写： /abc;jsessionid=xxx  把cookie里的值使用矩阵变量的方式进行传递
+
+<form action="/save" method="post">
+    测试@RequestBody获取数据<br/>
+    用户名：<input name="userName"/> <br/>
+    邮箱：<input name="email"/>
+    <input type="submit" value="提交"/>
+</form>
+</body>
+</html>

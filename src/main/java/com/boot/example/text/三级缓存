@@ -1,0 +1,81 @@
+
+基于构造方法注入的方式，其实是将创建对象和属性注入同时进行，因此马上就抛出错误
+
+
+一级缓存  单例池  singletonObjects  用来存储经过的完整的生命周期的bean
+二级缓存          earlySingletonObjects  用来存放还没有经过完整生命周期的bean对象，保证对象不会被重复的创建
+三级缓存  存的是一个lambda表达式 ObjectFactory，某一个bean到底会不会出现循环依赖，一开始是不知道的，所以spring在
+            bean一开始创建的时候，就把bean的普通对象以及RootBeanDefinition、beanName存到第三级缓存中
+
+
+AService 创建生命周期
+
+AService出现了循环依赖的情况下，才需要提前AOP
+
+0. creatingSet("AService") AService正在创建
+1. 创建一个AService普通对象 ---> singletonFactories<AService,lambda(AService普通对象 + beanDefinition)>
+2. 填充BService属性 ---> 去单例池中找BService对象 ---> 创建BService的Bean对象
+2.1 填充其他属性
+3. 其他操作
+4. 初始化后（aop）---> earlyProxyReference(map) 中没有 则会在此步进行aop
+6. 从二级缓存中取出对象 放入单例池
+
+
+
+
+BService 创建生命周期
+1. 创建一个BService普通对象
+2. 填充AService属性 ---> 去单例池中找AService对象(找不到，AService的创建刚走到第二步，
+    还未放进单例池中) --->creatingSet 里找，找到则表示AService正在创建中，出现了循环依赖
+    需要AOP则 先在二级缓存earlySingletonObjects找 （保证了BService和CService里的AService）属性是同一个代理对象
+    --->二级缓存没找到则去三级缓存里去找 singletonFactories ，执行lambda表达式，不需要进行aop 则得到的是普通对象，
+    需要进行aop 得到的是代理对象，放进二级缓存里earlySingletonObjects
+
+2.1 填充其他属性
+3. 其他操作
+4. 初始化后（aop）
+6. 放入单例池
+
+
+
+
+
+为什么要一级缓存升级为二级缓存
+
+一级缓存的问题在于，就1个map，里面既有完整的已经ready的bean，也有不完整的，尚未设置field的bean。
+如果这时候，有其他线程去这个map里获取bean来用怎么办？拿到的bean，不完整，怎么办呢？属性都是null，直接空指针了。
+所以，我们就要加一个map，这个map，用来存放那种不完整的bean
+
+在初始化后步骤 可能会进行aop，之后会将AService的代理对象放进单例池，但是BService里持有的是AService的
+普通对象，正确的应该是将AService的代理对象赋值给BService的AService属性
+
+
+二级缓存升级为三级缓存
+绝大多数的bean在创建的时候都不会出现循环依赖问题，如果只有二级缓存的话，
+对象什么时候放进二级缓存？（放的是经过代理后的对象）  在发现存在循环依赖之后再存？
+A注入B的时候，发现B没有正在创建，开始创建B，B注入A，一级缓存中没有，正在创建（发现循环），二级缓存中没有，总共只有两级缓存，
+都没有，又正在创建中，不可以再创建一个。结束
+那么在发现循环依赖之前就存？
+A存在二级缓存中（经过aop处理），A注入B的时候，发现B没有正在创建，开始创建B，如果B不依赖A呢？，A就没有必要提前AOP了。
+所以综上，需要一个在属性注入之前就存在的缓存，存放Bean的一些信息，这些信息支持AOP处理这一步骤，但并不马上进行AOP，在发现
+存在循环依赖的时候再进行AOP，即spring的第三级缓存
+
+
+
+
+二级缓存里存放（只能在发现有循环依赖之前）的是进行
+getEarlyBeanReference处理后的对象还是未经处理的singletonFactories对象？
+如果存放的是getEarlyBeanReference处理后的对象，表示每一个bean在创建的时候都要经过这一本不需要的步骤（在未出现
+循环依赖的情况下），如果存放的是 未经处理的singletonFactories对象，那么拿出来用的时候(当有多个bean依赖这个bean的时候)，
+即每一次执行的时候（返回对象）得到的对象怎么保证是单例的呢？还需要一个Map，（即原先的第二级缓存，earlySingletonObjects），
+也就是说lambda表达式，这个singletonFactories，只能被执行一次，用以保证单例。
+
+
+不管有没有循环依赖，都提前创建好代理对象，并将代理对象放入缓存，出现循环依赖时，其他对象直接就可以取到代理对象并注入。
+不提前创建好代理对象，在出现循环依赖被其他对象注入时，才实时生成代理对象。这样在没有循环依赖的情况下，
+Bean就可以按着Spring设计原则的步骤来创建。
+
+
+@Async导致循环依赖解决不了
+初始化代码中有个判断，如果出现了循环依赖而
+二级缓存中存放的提前进行过aop的代理对象和 （初始化bean）@Async注解的后置处理器增强的代理对象不是同一个代理对象会报错

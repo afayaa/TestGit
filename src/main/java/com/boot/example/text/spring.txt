@@ -1,0 +1,210 @@
+Spring 是什么
+    轻量级的开源J2EE框架，它是一个容器框架，用来装javaBean(java对象)，中间层框架(万能胶) 可以起一个连接
+作用，比如说吧springMVC和Mybatis粘合在一起运用，可以让我们的企业开发更快，更简洁
+    spring是一个轻量级的控制反转(IOC)和面向切面(AOP)的容器框架
+    --从大小与开销两方面而言Spring都是轻量级的
+    --通过控制反转的技术达到松耦合的目的
+    --提供了面向切面编程的丰富支持，允许通过分离应用的业务逻辑与系统级服务进行内聚性(各个模块只关注自己想实现的)开发
+    --包含并管理应用对象(Bean)的配置和生命周期，这个意义上是一个容器
+    --将简单的组件配置、组合成复杂的应用，这个意义上是一个框架
+
+
+
+Spring事务传播机制
+    多个事务方法互相调用时，事务如何在这些方法间传播
+    方法A是一个事务方法，方法A执行过程中调用了方法B，那么方法B有无事务以及方法B对事务的要求不同都会对方法A的事务具体执行造成
+影响，同时方法A的事务对方法B的事务执行也有影响，这种影响具体是什么就由两个方法所定义的事务传播类型所决定。
+
+    需要一个事务REQUIRED(Spring默认的事务传播类型)：如果当前没有事务，则自己新建一个事务，如果当前存在事务，则加入这个事务
+    支持事务SUPPORTS：当前存在事务，则加入当前事务，如果当前没有事务，就以非事务方法执行
+    必须有事务MANDATORY：当前存在事务，则加入当前事务，如果当前事务不存在，则抛出异常
+    需要一个新事务REQUIRES_NEW：创建一个新事务，如果存在当前事务，则挂起该事务
+    不支持事务NOT_SUPPORTED:以非事务方式执行，如果当前存在事务，则挂起当前事务
+    禁止事务NEVER:不使用事务，如果当前事务存在，则抛出异常
+    嵌套事务NESTED:如果当前事务存在，则在嵌套事务中执行，否则和REQUIRED的操作一样(开启一个事务)
+        和REQUIRES_NEW的区别
+        REQUIRES_NEW是新建一个事务，并且新开启的这个事务与原有事务无关，而NESTED则是当前存在事务时(我们把当前事务
+        称之为父事务)会开启一个嵌套事务(称之为一个子事务)。在NESTED情况下父事务回滚时，子事务也会回滚，而在REQUIRES_NEW
+        情况下，原有事务回滚，不会影响新开启的事务
+        和REQUIRED的区别
+        REQUIRED情况下，调用方存在事务，则被调用方和调用方使用同一事务，那么被调用方出现异常时，由于共用一个事务，所以
+        无论调用方是否catch异常，事务都会回滚，而在NESTED情况下，被调用方发生异常时，调用方可以catch其异常，这样只有子
+        事务回滚，父事务不受影响
+
+
+Spring事务隔离级别：
+    ISOLATION_DEFAULT:使用数据库默认的隔离级别
+    ISOLATION_READ_UNCOMMITTED: 读未提交，允许事务在执行过程中，读取其他事物未提交的数据。
+    ISOLATION_READ_COMMITTED： 读已提交，允许事务在执行过程中，读取其他事物已经提交的数据。
+    ISOLATION_REPEATABLE_READ(Mysql默认): 可重复读，在同一个事务内，任意时刻的查询结果是一致的。
+    ISOLATION_SERIALIZABLE:所有事务依次执行
+
+    以Spring中配置的为准，如数据库不支持，效果取决于数据库
+
+    脏读：读到了还未提交事务的数据。
+        A事务读到了B事务未提交的数据
+
+    不可重复读：在一个事务中多次读取同一个数据时，结果出现不一致。
+
+    幻读：在一个事务中使用相同的 SQL 两次读取，第二次读取到了其他事务新插入的行。
+
+ACID
+    A   原子性，事务中的处理要么都成功，要么都失败
+    C   一致性,写入的资料必须符合预设的规则
+    I   隔离性，防止多个事务并发执行时由于交叉执行导致数据不一致
+    D   持久性，事务处理结束后，对数据的修改是永久的，即使系统故障也不会丢失
+
+
+Spring事务是如何实现的
+    1.Spring事务底层是基于数据库事务AOP机制实现的
+    2.首先对于使用了@Transactional注解的Bean，Spring会创建一个代理对象
+    3.当调用代理对象的方法时，会先判断该方法上是否加了@Transactional注解
+    4.如果加了，那么利用事务管理器创建一个数据库连接
+    5.并且修改数据库连接的autocommit属性为false，禁止此连接的自动提交，
+    6.然后执行当前方法，
+    7.执行完当前方法后，如果没有出现异常就直接提交事务
+    8.如果出现了异常，并且这个异常是需要回滚的就会回滚事务，否则仍然提交事务
+    9.Spring事务的隔离级别对应的就是数据库的隔离级别
+    10.Spring的事务传播机制是Spring本身的
+    11.Spring事务的传播机制是基于数据库连接来的，一个数据库连接一个事务，如果传播机制配置为需要新开一个事务，那么实际上就是先
+    建立一个数据库连接，在此新数据库连接上执行sql
+
+
+
+
+
+Spring中Bean的创建过程
+    首先，简单来说，Spring框架中的Bean经过四个阶段
+    实例化--->属性赋值--->初始化--->销毁
+    然后，具体来说，Spring中的Bean经过了以下几个步骤：
+    1.推断构造方法 实例化： new XXX(); 两个时机：1.当客户端向容器申请一个Bean时，2。当容器在初始化一个Bean时发现还需要依赖其他Bean。
+    包扫描后，以BeanDefinition对象形式保留Bean的信息
+    2.设置对象属性(依赖注入)：Spring根据BeanDefinition里的信息找到依赖的其他对象，并将这些对象赋予当前对象。
+    3.处理一些Aware接口：Spring会检测对象是否实现了xxxAware接口，如果实现了，就会调用对应的方法
+        BeanNameAware、BeanClassLoadAware、BeanFactoryAware、applicationContextAware
+    4.BeanPostProcessor前置处理：调用BeanPostProcessor的postProcessBeforeInitialization方法
+    5.init-method: <bean init-method> 如果Spring发现Bean配置了这个属性，就会调用它的配置方法，对应注解为@PostConstruct
+    6.InitializingBean: Spring检测如果实现了这个接口，就会执行他的afterPropertiesSet方法
+    7.BeanPostProcessor后置处理调用BeanPostProcessor的postProcessAfterInitialization方法
+    此时Bean的创建过程就完成了，Bean就可以正常使用了
+
+    8.DisposeAbleBean:当Bean实现了这个接口，在对象销毁前就会调用destroy方法
+    9.destroy-method:<bean destroy-method>  对应注解@PreDestroy
+
+
+
+Spring框架中的Bean是线程安全的吗？如果线程不安全，要如何处理
+
+    Spring容器本身没有提供Bean的线程安全策略，因此，Spring容器中的Bean不是线程安全的。
+    要如何处理安全问题，就要分情况来分析。
+    Spring中的作用域(@Scope)：1、Singleton(默认、单例) 2、prototype(原型Bean)为每个Bean请求创建新实例
+    3、request:为每个request实例创建新Bean，请求完成后失效 4.session，与request类似
+    5.global-session:全局会话
+
+    线程安全问题
+
+    1>对于prototype，每次都是生成一个新对象，所以不存在线程安全问题
+    2>singleton作用域：默认就是线程不安全的。但是对于开发中大部分的Bean，其实是无状态的，不需要保证线程安全。
+    所以在平常的MVC开发中，是不会有线程安全问题。（MVC的开发模型起到了隔离作用）
+        无状态表示这个实例没有属性对象，不能保存数据，是不变的类，比如：controller，service，dao
+        有状态表示实例是有属性对象，可以保存数据，是线程不安全的，比如pojo
+    但是如果要保证线程安全，可以将Bean的作用域改为prototype 比如像 Model View，如果非要交由Spring管理，不使用new的方式
+    另外还可以采用ThreadLocal来解决线程安全问题。ThreadLocal为每个线程保存一个副本变量，每个线程只操作自己的副本变量
+
+
+
+Spring框架中用了哪些设计模式
+    简单工厂：由一个工厂类根据传入的参数，动态决定应该创建哪一个产品类
+    Spring中的BeanFactory就是简单工厂模式的体现，根据传入一个唯一的标识来获取Bean对象，getBean()
+
+    工厂方法：
+    实现了FactoryBean接口的bean是一类叫做factory的bean，其特点是，spring会在使用getBean()调用获得该bean时，自动调用该bean
+的getObject()方法，所以返回的不是factory这个bean，而是bean.getObject()方法的返回值。
+
+    单例模式：保证一个类仅有一个实例，并提供一个访问它的全局变量
+    Spring对单例的实现：Spring中的单例模式完成了后半句话，即提供了全局的访问点BeanFactory，但没有从构造器级别去控制单例，
+这是因为Spring管理的是任意的java对象
+
+    适配器模式：
+    Spring定义了一个适配器接口，使得每一种Controller有一种对应的适配器实现类，让适配器代替Controller执行相应的方法。这样
+在扩展Controller时，只需要增加一个适配器类就完成了SpringMVC的扩展;AOP中代理类保留普通对象的引用，target属性，对象适配器
+模式
+
+    动态代理：
+    切面在应用运行的时刻被织入，一般情况下，在织入切面时，AOP容器会为目标对象创建一个代理对象
+
+    责任链模式： 很多后置处理器，一个处理完就下一个再处理
+
+
+
+Spring容器的启动流程是怎样的
+    1.在创建Spring容器，也就是启动Spring时：
+    2.首先会进行扫描，扫描得到所有的BeanDefinition对象，并存在一个Map中
+    3.然后筛选出非懒加载的单例BeanDefinition进行创建Bean，对于多例Bean不需要在启动过程中去进行创建，多例Bean会在每次获取
+Bean时利用BeanDefinition去创建
+    4.利用BeanDefinition创建Bean就是Bean的生命周期，这期间包括了合并BeanDefinition、推断构造方法、实例化、属性填充、
+初始化前、初始化、初始化后等步骤，其中AOP发生在初始化后这一步骤。
+    5.单例Bean创建完了之后，Spring会发布一个容器启动事件
+    6.Spring启动结束
+
+
+Spring中后置处理器的作用
+    Spring中的后置处理器分为BeanFactory后置处理器和Bean后置处理器，它们是Spring底层源码架构设计中非常重要的一种机制，
+同时开发者也可以利用这两种后置处理器来进行扩展，BeanFactory后置处理器表示针对BeanFactory的处理器，Spring启动过程中，
+会先创建出BeanFactory实例，然后利用BeanFactory处理器来加工BeanFactory，比如Spring的扫描就是基于BeanFactory后置处理器
+来实现的，而Bean后置处理器也类似，Spring在创建一个Bean的过程中，首先会实例化得到一个对象，然后利用Bean后置处理器来对该
+实例对象进行加工，比如依赖注入就是基于一个Bean后置处理器来实现的，通过该Bean后置处理器来给实例对象中加了@AutoWired注解的
+属性自动赋值，还比如AOP也是利用一个Bean后置处理器来实现的，基于原实例对象，判断是否需要进行AOP，如果需要，那么就基于原
+实例对象进行动态代理，生成一个代理对象
+
+
+
+常用的SpringBoot注解，及其实现
+    1.@SpringBootApplication：这个注解标识了一个SpringBoot工程，它实际上是另外三个注解的组合：
+        a:@SpringBootConfiguration:这个注解实际上就是一个@Configuration，表示启动类也是一个配置类
+        b:@EnableAutoConfiguration 向Spring容器中导入了一个selector，用来加载SpringFactories中定义的自动配置类，
+        将这些自动配置为Bean
+        c:@ComponentScan 标识扫描路径，因为默认是没有配置实际扫描路径，所以SpringBoot扫描的路径是启动类所在的当前目录
+    2.@Bean注解：用来定义Bean，类似于XML中的<bean>标签，Spring在启动时，会对加了@Bean注解的方法进行解析，将这些方法的
+    名字作为beanName，并通过执行方法得到bean对象
+    3.@Controller，@Service，@Autowired，@EnableConfigurationProperties,@ConfigurationProperties
+
+
+
+如何实现一个IOC容器
+    1.配置文件配置包扫描路径
+    2.递归包扫描获取.class文件
+    3.反射，确定需要交给IOC管理的类
+    4.对需要注入的类进行依赖注入
+
+    配置文件中指定需要扫描的包路径
+    定义一些注解，分别表示访问控制层，业务服务层，数据持久层，依赖注入注解，获取配置文件注解
+    从配置文件中获取需要扫描的包路径，获取到当前路径下的文件信息以及文件夹信息，我们将当前路径下的所有以.class结尾
+    的文件添加到一个set集合中进行存储
+    遍历这个set，获取在类上有指定注解的类，并将其交给IOC容器，定义一个安全的Map来存储这些对象
+    遍历这个IOC容器，获取到每一个类的实例，判断里面是否有依赖其他的类的实例，然后进行递归注入
+
+
+
+如何理解SpringBoot 中的Starter
+    使用Spring + SpringMVC时，如果需要引入mybatis等框架，需要到xml中定义mybatis需要的bean
+    starter就是定义一个starter的jar包，写一个@Configuration配置类，将这些bean定义在里面，然后在starter包的META-INF/
+spring.factories中写入该配置类，springboot会按照约定来加载该配置类
+    开发人员只需要将相应的starter包依赖进应用，进行相应的属性配置(使用默认配置时、不需要配置)，就可以直接进行代码开发，
+使用对应的功能了，比如mybatis-spring-boot-starter，spring-boot-starter-redis
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
