@@ -1,5 +1,6 @@
 package com.boot.example.bean;
 
+import com.sun.istack.internal.NotNull;
 import lombok.Data;
 import lombok.ToString;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -13,6 +14,8 @@ import java.util.Set;
 @Data
 @ConfigurationProperties(prefix = "person")
 public class Person {
+	
+	@NotNull
 	private String userName;
 	private Boolean boss;
 	private Date birth;
